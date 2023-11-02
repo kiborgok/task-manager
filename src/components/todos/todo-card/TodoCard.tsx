@@ -6,6 +6,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { BASE_API_URL } from "../../../lib/constants";
 import { useTodos } from "../../../stores/useTodos";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 interface TodoCardProps {
   todo: TodoType;
@@ -15,16 +17,17 @@ const TodoCard = ({ todo }: TodoCardProps) => {
   const [isChecked, setIsChecked] = React.useState(todo.status === "complete");
   const queryClient = useQueryClient();
   const { setTodoForEdit } = useTodos();
+  const { t } = useTranslation();
 
   const { mutate, isPending } = useMutation({
     mutationFn: ({
       todoId,
       status,
     }: {
-      todoId: string,
-      status: TodoStatus,
+      todoId: string;
+      status: TodoStatus;
     }) => {
-      return axios.put(
+      return axios.put<TodoType>(
         `${BASE_API_URL}/todos/${todoId}`,
         {
           status,
@@ -41,10 +44,22 @@ const TodoCard = ({ todo }: TodoCardProps) => {
         }
       );
     },
-    onSuccess: () => {
+    onSuccess: ({ data }) => {
       queryClient.invalidateQueries({
         queryKey: ["todosData", `${BASE_API_URL}/todos`],
       });
+
+      if (data.status === "complete") {
+        toast.success(t("complete-success"));
+      }
+
+      if (data.status === "incomplete") {
+        toast(t("restore-success"));
+      }
+
+      if (data.status === "archived") {
+        toast(t("archive-success", { icon: "🗑️" }));
+      }
     },
   });
 
