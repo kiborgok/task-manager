@@ -1,17 +1,22 @@
-import { useState, useEffect } from "react";
-import { useTodos } from "../../../stores/useTodos";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { BASE_API_URL } from "../../../lib/constants";
 import { Check, Loader, Plus } from "lucide-react";
+import React from "react";
+import { BASE_API_URL } from "../../../lib/constants";
+import { useTodos } from "../../../stores/useTodos";
 import { cn } from "../../../lib/utils";
+import { useAuthUser } from "../../../stores/useAuthUser";
+import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
 
 const AddTodoForm = () => {
   const { todoForEdit, setTodoForEdit } = useTodos();
-  const [todoInput, setTodoInput] = useState("");
+  const [todoInput, setTodoInput] = React.useState("");
   const queryClient = useQueryClient();
+  const { user } = useAuthUser();
+  const { t } = useTranslation();
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (todoForEdit) {
       setTodoInput(todoForEdit.name);
     }
@@ -34,15 +39,28 @@ const AddTodoForm = () => {
       queryClient.invalidateQueries({
         queryKey: ["todosData", `${BASE_API_URL}/todos`],
       });
+      if (todoForEdit) {
+        toast.success(t("update-success"));
+      } else {
+        toast.success(t("add-success"));
+      }
       setTodoInput("");
       setTodoForEdit({ todo: null });
+    },
+    onError: () => {
+      toast.error(t("error"));
     },
   });
 
   const handleAddTodo = (e: React.FormEvent) => {
     e.preventDefault();
-    mutate({ name: todoInput, userId: "1234" });
+    if (user) {
+      mutate({ name: todoInput, userId: user.id });
+    } else {
+      return;
+    }
   };
+
   return (
     <form
       action=""
@@ -53,10 +71,11 @@ const AddTodoForm = () => {
         type="text"
         name="todo"
         id="todo"
+        data-testid="todo-input"
         value={todoInput}
         disabled={isPending}
         onChange={(e) => setTodoInput(e.target.value)}
-        placeholder="Write your next task..."
+        placeholder={t("placeholder")}
         className="flex-1 rounded-lg bg-gray-700 focus:stroke-gray-400 focus-visible:stroke-gray-400 focus:outline-gray-400 focus-visible:outline-1 font-mono font-light px-4 py-2"
       />
 
