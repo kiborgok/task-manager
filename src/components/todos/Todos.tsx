@@ -1,5 +1,7 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useFetch } from "../../hooks/useFetch";
+import { useAuthUser } from "../../stores/useAuthUser";
 import { useTodos } from "../../stores/useTodos";
 import Tabs from "../tabs/Tabs";
 import AddTodoForm from "./add-todo-form/AddTodoForm";
@@ -8,26 +10,29 @@ import TodosLoader from "./todos-loader/TodosLoader";
 import { cn } from "../../lib/utils";
 
 const Todos = () => {
-  const { data } = useFetch();
+  const { data, isLoading } = useFetch();
+  const { user } = useAuthUser();
   const { setTodos, incompleteTodos, completedTodos, archivedTodos } =
     useTodos();
+  const { t } = useTranslation();
 
   useEffect(() => {
-    if (data && data.data) {
-      setTodos({ todos: data.data });
+    if (data && data.data && user) {
+      const userTodos = data.data.filter((item) => item.userId === user.id);
+      setTodos({ todos: userTodos });
     }
-  }, [data, setTodos]);
+  }, [data, setTodos, user]);
 
   const tabs = [
     {
-      label: "Incomplete",
+      label: t("incomplete"),
       content: (
         <div>
-          {!incompleteTodos ? (
+          {!incompleteTodos || isLoading ? (
             <TodosLoader />
           ) : incompleteTodos.length === 0 ? (
             <div className="flex items-center justify-center border py-8 border-1 border-gray-700">
-              No Upcoming Todos
+              {t("no-upcoming")}
             </div>
           ) : (
             <TodosList todos={incompleteTodos} />
@@ -36,14 +41,14 @@ const Todos = () => {
       ),
     },
     {
-      label: "Completed",
+      label: t("completed"),
       content: (
         <div>
-          {!completedTodos ? (
+          {!completedTodos || isLoading ? (
             <TodosLoader />
           ) : completedTodos.length === 0 ? (
             <div className="flex items-center justify-center border py-8 border-1 border-gray-700">
-              No Todos completed yet
+              {t("no-completed")}
             </div>
           ) : (
             <TodosList todos={completedTodos} />
@@ -52,14 +57,14 @@ const Todos = () => {
       ),
     },
     {
-      label: "Deleted",
+      label: t("deleted"),
       content: (
         <div>
-          {!archivedTodos ? (
+          {!archivedTodos || isLoading ? (
             <TodosLoader />
           ) : archivedTodos.length === 0 ? (
             <div className="flex items-center justify-center border py-8 border-1 border-gray-700">
-              No Todos archived yet
+              {t("no-archived")}
             </div>
           ) : (
             <TodosList todos={archivedTodos} />
@@ -70,12 +75,17 @@ const Todos = () => {
   ];
 
   return (
-    <div className="text-lg text-orange-100" aria-roledescription="todos">
-      <div className="max-w-[500px] mx-auto">
+    <div
+      className="text-lg text-orange-100 max-sm:px-2"
+      aria-roledescription="todos"
+    >
+      <div className="lg:max-w-[550px] mx-auto">
         <div className="flex items-center justify-between my-8 border border-orange-100 rounded-lg py-8 px-4">
-          <div>
-            <h2 className="text-2xl leading-10 font-mono">Todos Done</h2>
-            <p className="font-light text-sm font-mono">Keep it up!</p>
+          <div className="max-sm:flex-1">
+            <h2 className="text-lg lg:text-2xl leading-10 font-mono font-semibold">
+              {t("header")}
+            </h2>
+            <p className="font-light text-sm font-mono">{t("subHeader")}</p>
           </div>
           {completedTodos && incompleteTodos && (
             <div
@@ -84,7 +94,7 @@ const Todos = () => {
                   completedTodos.length + incompleteTodos.length
                   ? "bg-green-600"
                   : "bg-orange-600",
-                "h-[100px] w-[100px] rounded-full flex items-center justify-center text-3xl font-bold"
+                "h-[100px] max-sm:max-w-[100px] w-[100px] rounded-full flex items-center justify-center text-xl md:text-3xl font-bold max-sm:flex-1"
               )}
             >
               {completedTodos.length}/
@@ -94,6 +104,7 @@ const Todos = () => {
         </div>
         <AddTodoForm />
       </div>
+
       <div className="py-8">
         <Tabs tabs={tabs} />
       </div>
