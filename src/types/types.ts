@@ -7,3 +7,11 @@ export interface TodoType {
   status: TodoStatus;
   id: string;
 }
+
+export interface UserType {
+  createdAt: string;
+  email: string;
+  avatar: string;
+  password: string;
+  id: string;
+}
